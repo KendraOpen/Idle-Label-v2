@@ -2,193 +2,103 @@
 
 import { useGame } from '@/lib/useGame';
 
-function formatNumber(num: number): string {
-  if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-  if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-  if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
-  return Math.floor(num).toString();
+function fmt(n: number): string {
+  if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return Math.floor(n).toString();
 }
 
 export default function Home() {
-  const {
-    clickToEarn,
-    state,
-    isLoading,
-    upgrade,
-    prestige,
-    save,
-    reset,
-    calculatePrestige,
-    calculateUpgradeCost,
-    SKILLS,
-    MAX_LEVEL,
-  } = useGame();
+  const { state, isLoading, upgrade, clickToEarn, prestige, save, reset, prestigeInfo, getCost, SKILLS, MAX_LEVEL } = useGame();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center">
-        <div className="text-[#2dd4bf] text-2xl">Loading...</div>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center text-[#2dd4bf]">Loading...</div>;
+  if (!state) return <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center text-red-500">Error</div>;
 
-  // If no state, show error
-  if (!state) {
-    return (
-      <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center">
-        <div className="text-red-500">Error loading game</div>
-      </div>
-    );
-  }
-
-  const prestigeInfo = calculatePrestige;
+  const resources = [
+    { k: 'cash', i: '💵', l: 'Cash', v: state.resources.cash },
+    { k: 'beats', i: '🎵', l: 'Beats', v: state.resources.beats },
+    { k: 'tracks', i: '🎬', l: 'Tracks', v: state.resources.tracks },
+    { k: 'fans', i: '👥', l: 'Fans', v: state.resources.fans },
+    { k: 'xp', i: '⭐', l: 'XP', v: state.resources.xp },
+  ];
 
   return (
     <div className="min-h-screen bg-[#0a0e17] text-white p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <header className="text-center mb-8">
-          <h1 className="text-4xl md:text-6xl font-black tracking-wider mb-2">
-            <span className="bg-gradient-to-r from-[#2dd4bf] via-[#6366f1] to-[#FF6B6B] bg-clip-text text-transparent">
-              IDLE LABEL
-            </span>
+          <h1 className="text-4xl md:text-6xl font-black mb-2">
+            <span className="bg-gradient-to-r from-[#2dd4bf] via-[#6366f1] to-[#FF6B6B] bg-clip-text text-transparent">IDLE LABEL</span>
           </h1>
-          <p className="text-[#94a3b8]">Build your music empire</p>
-          
-          {state.prestige > 0 && (
-            <div className="mt-2 inline-block bg-[#6366f1] px-4 py-1 rounded-full text-sm">
-              🌟 Prestige: {state.prestige} ({(state.prestigeMultiplier).toFixed(1)}x)
-            </div>
-          )}
+          <p className="text-[#94a3b8]">Build your music empire!</p>
+          {state.prestige > 0 && <div className="mt-2 inline-block bg-[#6366f1] px-4 py-1 rounded-full text-sm">🌟 {state.prestige} ({state.prestigeMultiplier.toFixed(1)}x)</div>}
         </header>
 
-        {/* Manual Click Button */}
+        {/* CLICK TO EARN */}
         <div className="mb-6 text-center">
-          <button 
-            onClick={() => clickToEarn()}
-            className="px-8 py-4 bg-gradient-to-r from-[#FF6B6B] to-orange-500 rounded-xl font-bold text-lg animate-pulse hover:scale-105 transition-transform"
-          >
-            🎵 Click to Make Beat (+1 Beat)
-          </button>
-        </div>
-        {/* CLICK TO EARN - Starter mechanic */}
-        <div className="mb-6 text-center">
-          <button 
-            onClick={clickToEarn}
-            className="px-8 py-4 bg-gradient-to-r from-[#FF6B6B] to-orange-500 rounded-xl font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-[#FF6B6B]/20"
-          >
+          <button onClick={clickToEarn} className="px-8 py-4 bg-gradient-to-r from-[#FF6B6B] to-orange-500 rounded-xl font-bold text-lg hover:scale-105 transition-transform shadow-lg">
             🎵 Click to Make Beat (+1)
           </button>
         </div>
-        {/* Resources - Force update every render */}
+
+        {/* RESOURCES */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-          {[
-            { key: 'cash', icon: '💵', label: 'Cash', value: state.resources.cash, color: 'from-green-500 to-emerald-600' },
-            { key: 'beats', icon: '🎵', label: 'Beats', value: state.resources.beats, color: 'from-cyan-500 to-blue-600' },
-            { key: 'tracks', icon: '🎬', label: 'Tracks', value: state.resources.tracks, color: 'from-purple-500 to-pink-600' },
-            { key: 'fans', icon: '👥', label: 'Fans', value: state.resources.fans, color: 'from-orange-500 to-red-600' },
-            { key: 'xp', icon: '⭐', label: 'XP', value: state.resources.xp, color: 'from-yellow-500 to-amber-600' },
-          ].map((res) => (
-            <div
-              key={res.key}
-              className="bg-[#111827] rounded-xl p-4 border border-[#1e293b]"
-            >
-              <div className="text-2xl mb-1">{res.icon}</div>
-              <div className="text-xs text-[#64748b] uppercase">{res.label}</div>
-              <div className="text-xl md:text-2xl font-bold text-white">
-                {formatNumber(res.value)}
-              </div>
+          {resources.map(r => (
+            <div key={r.k} className="bg-[#111827] rounded-xl p-4 border border-[#1e293b]">
+              <div className="text-2xl mb-1">{r.i}</div>
+              <div className="text-xs text-[#64748b] uppercase">{r.l}</div>
+              <div className="text-xl md:text-2xl font-bold">{fmt(r.v)}</div>
             </div>
           ))}
         </div>
 
-        {/* Skills */}
+        {/* HOW TO PLAY */}
+        <div className="bg-[#111827] rounded-xl p-4 border border-[#2dd4bf] mb-6 text-center text-sm text-[#94a3b8]">
+          <p>🎵 Click to get Beats → 🎹 Beat Making makes Beats/s → 🎛️ Production makes Tracks → 🎤 Performance makes Fans → 💵 Marketing gives Cash!</p>
+        </div>
+
+        {/* SKILLS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {Object.entries(SKILLS).map(([key, skill]) => {
-            const level = state.skills[key];
-            const cost = calculateUpgradeCost(key, level);
-            const isMaxed = level >= MAX_LEVEL;
+          {(Object.keys(SKILLS) as SkillName[]).map(skillKey => {
+            const skill = SKILLS[skillKey];
+            const level = state.skills[skillKey];
+            const cost = getCost(skillKey);
+            const maxed = level >= MAX_LEVEL;
             const canAfford = state.resources.cash >= cost;
 
             return (
-              <div
-                key={key}
-                className="bg-[#111827] rounded-xl p-4 border border-[#1e293b] hover:border-[#2dd4bf] transition-all"
-              >
+              <div key={skillKey} className="bg-[#111827] rounded-xl p-4 border border-[#1e293b] hover:border-[#2dd4bf] transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{skill.icon}</span>
-                    <span className="font-semibold">{skill.name}</span>
-                  </div>
+                  <span className="text-2xl">{skill.icon}</span>
+                  <span className="font-semibold">{skill.name}</span>
                   <span className="text-[#64748b] text-sm">Lvl {level}</span>
                 </div>
-                
-                <p className="text-xs text-[#64748b] mb-3">{skill.description}</p>
-                
-                <div className="h-2 bg-[#0a0e17] rounded-full mb-3 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#2dd4bf] to-[#6366f1]"
-                    style={{ width: `${(level / MAX_LEVEL) * 100}%` }}
-                  />
+                <p className="text-xs text-[#64748b] mb-2">{skill.description}</p>
+                <div className="h-2 bg-[#0a0e17] rounded-full mb-3">
+                  <div className="h-full bg-gradient-to-r from-[#2dd4bf] to-[#6366f1]" style={{width: `${(level/MAX_LEVEL)*100}%`}} />
                 </div>
-                
-                <button
-                  onClick={() => upgrade(key)}
-                  disabled={isMaxed || !canAfford}
-                  className={`w-full py-2 rounded-lg font-medium ${
-                    isMaxed
-                      ? 'bg-[#1e293b] text-[#64748b]'
-                      : canAfford
-                      ? 'bg-gradient-to-r from-[#2dd4bf] to-[#6366f1] text-white'
-                      : 'bg-[#1e293b] text-[#64748b]'
-                  }`}
-                >
-                  {isMaxed ? 'MAXED' : `Upgrade 💵 ${formatNumber(cost)}`}
+                <button onClick={() => upgrade(skillKey)} disabled={maxed || !canAfford} className={`w-full py-2 rounded-lg font-medium ${maxed ? 'bg-[#1e293b] text-[#64748b]' : canAfford ? 'bg-gradient-to-r from-[#2dd4bf] to-[#6366f1] text-white' : 'bg-[#1e293b] text-[#64748b]'}`}>
+                  {maxed ? 'MAXED' : `Upgrade 💵${fmt(cost)}`}
                 </button>
               </div>
             );
           })}
         </div>
 
-        {/* Prestige */}
+        {/* PRESTIGE */}
         <div className="bg-[#111827] rounded-xl p-6 border border-[#6366f1] mb-8 text-center">
           <h2 className="text-xl font-bold mb-2">🌟 Prestige</h2>
-          <p className="text-[#94a3b8] text-sm mb-4">
-            Reset for permanent multiplier
-          </p>
-          {prestigeInfo && (
-            <button
-              onClick={prestige}
-              disabled={!prestigeInfo.canPrestige}
-              className={`px-6 py-2 rounded-lg font-medium ${
-                prestigeInfo.canPrestige
-                  ? 'bg-[#6366f1] text-white'
-                  : 'bg-[#1e293b] text-[#64748b]'
-              }`}
-            >
-              {prestigeInfo.canPrestige
-                ? `Prestige (+${prestigeInfo.bonus}x)`
-                : `Need ${formatNumber(prestigeInfo.cost)} XP`}
-            </button>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-4 justify-center">
-          <button onClick={save} className="px-4 py-2 bg-[#1e293b] rounded-lg">
-            💾 Save
-          </button>
-          <button 
-            onClick={() => { if (confirm('Reset?')) reset(); }} 
-            className="px-4 py-2 bg-[#1e293b] rounded-lg"
-          >
-            🗑️ Reset
+          <p className="text-[#94a3b8] text-sm mb-4">Reset for permanent multiplier!</p>
+          <button onClick={prestige} disabled={!prestigeInfo.canPrestige} className={`px-6 py-2 rounded-lg font-medium ${prestigeInfo.canPrestige ? 'bg-[#6366f1] text-white' : 'bg-[#1e293b] text-[#64748b]'}`}>
+            {prestigeInfo.canPrestige ? `Prestige (+${prestigeInfo.bonus}x)` : `Need ${fmt(prestigeInfo.cost)} XP`}
           </button>
         </div>
 
-        <footer className="text-center mt-8 text-[#64748b] text-sm">
-          <p>💡 Beats → Tracks → Fans → Cash!</p>
-        </footer>
+        {/* ACTIONS */}
+        <div className="flex gap-4 justify-center mb-6">
+          <button onClick={save} className="px-4 py-2 bg-[#1e293b] rounded-lg hover:bg-[#2dd4bf] hover:text-white">💾 Save</button>
+          <button onClick={() => confirm('Reset?') && reset()} className="px-4 py-2 bg-[#1e293b] rounded-lg hover:bg-red-600 hover:text-white">🗑️ Reset</button>
+        </div>
       </div>
     </div>
   );

@@ -1,115 +1,85 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   GameState,
   createDefaultState,
-  processTick,
+  gameTick,
   upgradeSkill,
   doPrestige,
-  calculatePrestige,
-  calculateUpgradeCost,
+  getPrestigeInfo,
+  getUpgradeCost,
   saveGame,
   loadGame,
-  resetGame,
+  clearSave,
   SKILLS,
   MAX_LEVEL,
+  SkillName,
 } from '@/lib/game';
 
 export function useGame() {
-  const [gameState, setGameState] = useState<GameState>(createDefaultState());
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Load game on mount
+  const [state, setState] = useState<GameState>(createDefaultState());
+  const [ready, setReady] = useState(false);
+
+  // Load on mount
   useEffect(() => {
-    try {
-      const saved = loadGame();
-      if (saved) {
-        setGameState(saved);
-      }
-    } catch (e) {
-      console.error('Failed to load game:', e);
-    }
-    setLoaded(true);
+    const saved = loadGame();
+    if (saved) setState(saved);
+    setReady(true);
   }, []);
 
-  // Game tick - runs every 1 second
+  // Game tick every second
   useEffect(() => {
-    if (!loaded) return;
+    if (!ready) return;
+    const interval = setInterval(() => {
+      setState(prev => gameTick(prev));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [ready]);
 
-    const tick = () => {
-      setGameState(prev => {
-        try {
-          return processTick(prev);
-        } catch (e) {
-          console.error('Tick error:', e);
-          return prev;
-        }
-      });
-    };
-
-    const intervalId = setInterval(tick, 1000);
-    return () => clearInterval(intervalId);
-  }, [loaded]);
-
-  // Auto-save every 30 seconds
+  // Auto-save every 30s
   useEffect(() => {
-    if (!loaded) return;
-    
-    const saveInterval = setInterval(() => {
-      saveGame(gameState);
-    }, 30000);
-    
-    return () => clearInterval(saveInterval);
-  }, [gameState, loaded]);
+    if (!ready) return;
+    const interval = setInterval(() => saveGame(state), 30000);
+    return () => clearInterval(interval);
+  }, [state, ready]);
 
-  const upgrade = useCallback((skillName: string) => {
-    const result = upgradeSkill(gameState, skillName);
-    if (result.success) {
-      setGameState(result.state);
-      saveGame(result.state);
-    }
-  }, [gameState]);
-
-  const prestige = useCallback(() => {
-    const result = doPrestige(gameState);
-    if (result.success) {
-      setGameState(result.state);
-      saveGame(result.state);
-    }
-  }, [gameState]);
-
-  const save = useCallback(() => {
-    saveGame(gameState);
-  }, [gameState]);
-
-  const reset = useCallback(() => {
-    const newState = resetGame();
-    setGameState(newState);
+  const upgrade = useCallback((skill: SkillName) => {
+    setState(prev => {
+      const next = upgradeSkill(prev, skill);
+      if (next) saveGame(next);
+      return next || prev;
+    });
   }, []);
 
   const clickToEarn = useCallback(() => {
-    setGameState(prev => ({
+    setState(prev => ({
       ...prev,
-      resources: {
-        ...prev.resources,
-        beats: prev.resources.beats + 1,
-      }
+      resources: { ...prev.resources, beats: prev.resources.beats + 1 }
     }));
   }, []);
 
+  const prestige = useCallback(() => {
+    setState(prev => {
+      const next = doPrestige(prev);
+      if (next) saveGame(next);
+      return next || prev;
+    });
+  }, []);
+
+  const save = useCallback(() => saveGame(state), [state]);
+  const reset = useCallback(() => { clearSave(); setState(createDefaultState()); }, []);
+
   return {
-    state: gameState,
-    isLoading: !loaded,
-    error,
+    state,
+    isLoading: !ready,
     upgrade,
+    clickToEarn,
     prestige,
     save,
     reset,
-    clickToEarn,
-    calculatePrestige: calculatePrestige(gameState),
-    calculateUpgradeCost: (skillName: string, level: number) => calculateUpgradeCost(skillName, level),
+    prestigeInfo: getPrestigeInfo(state),
+    getCost: (skill: SkillName) => getUpgradeCost(skill, state.skills[skill]),
     SKILLS,
     MAX_LEVEL,
   };
