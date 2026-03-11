@@ -23,10 +23,19 @@ export default function Home() {
     MAX_LEVEL,
   } = useGame();
 
-  if (isLoading || !state) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center">
-        <div className="text-[#2dd4bf] text-2xl animate-pulse">Loading...</div>
+        <div className="text-[#2dd4bf] text-2xl">Loading...</div>
+      </div>
+    );
+  }
+
+  // If no state, show error
+  if (!state) {
+    return (
+      <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center">
+        <div className="text-red-500">Error loading game</div>
       </div>
     );
   }
@@ -45,7 +54,6 @@ export default function Home() {
           </h1>
           <p className="text-[#94a3b8]">Build your music empire</p>
           
-          {/* Prestige Badge */}
           {state.prestige > 0 && (
             <div className="mt-2 inline-block bg-[#6366f1] px-4 py-1 rounded-full text-sm">
               🌟 Prestige: {state.prestige} ({(state.prestigeMultiplier).toFixed(1)}x)
@@ -53,7 +61,7 @@ export default function Home() {
           )}
         </header>
 
-        {/* Resources */}
+        {/* Resources - Force update every render */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           {[
             { key: 'cash', icon: '💵', label: 'Cash', value: state.resources.cash, color: 'from-green-500 to-emerald-600' },
@@ -64,11 +72,13 @@ export default function Home() {
           ].map((res) => (
             <div
               key={res.key}
-              className={`bg-[#111827] rounded-xl p-4 border border-[#1e293b] shadow-lg`}
+              className="bg-[#111827] rounded-xl p-4 border border-[#1e293b]"
             >
               <div className="text-2xl mb-1">{res.icon}</div>
-              <div className="text-xs text-[#64748b] uppercase tracking-wider">{res.label}</div>
-              <div className="text-xl md:text-2xl font-bold text-white">{formatNumber(res.value)}</div>
+              <div className="text-xs text-[#64748b] uppercase">{res.label}</div>
+              <div className="text-xl md:text-2xl font-bold text-white">
+                {formatNumber(res.value)}
+              </div>
             </div>
           ))}
         </div>
@@ -96,7 +106,6 @@ export default function Home() {
                 
                 <p className="text-xs text-[#64748b] mb-3">{skill.description}</p>
                 
-                {/* Progress bar */}
                 <div className="h-2 bg-[#0a0e17] rounded-full mb-3 overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-[#2dd4bf] to-[#6366f1]"
@@ -107,11 +116,11 @@ export default function Home() {
                 <button
                   onClick={() => upgrade(key)}
                   disabled={isMaxed || !canAfford}
-                  className={`w-full py-2 rounded-lg font-medium transition-all ${
+                  className={`w-full py-2 rounded-lg font-medium ${
                     isMaxed
-                      ? 'bg-[#1e293b] text-[#64748b] cursor-not-allowed'
+                      ? 'bg-[#1e293b] text-[#64748b]'
                       : canAfford
-                      ? 'bg-gradient-to-r from-[#2dd4bf] to-[#6366f1] text-white hover:opacity-90'
+                      ? 'bg-gradient-to-r from-[#2dd4bf] to-[#6366f1] text-white'
                       : 'bg-[#1e293b] text-[#64748b]'
                   }`}
                 >
@@ -122,51 +131,44 @@ export default function Home() {
           })}
         </div>
 
-        {/* Prestige Section */}
-        <div className="bg-[#111827] rounded-xl p-6 border border-[#6366f1] mb-8">
-          <div className="text-center">
-            <h2 className="text-xl font-bold mb-2">🌟 Prestige</h2>
-            <p className="text-[#94a3b8] text-sm mb-4">
-              Reset progress to gain permanent multiplier bonus
-            </p>
-            {prestigeInfo && (
-              <button
-                onClick={prestige}
-                disabled={!prestigeInfo.canPrestige}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                  prestigeInfo.canPrestige
-                    ? 'bg-[#6366f1] text-white hover:opacity-90'
-                    : 'bg-[#1e293b] text-[#64748b]'
-                }`}
-              >
-                {prestigeInfo.canPrestige
-                  ? `Prestige (+${prestigeInfo.bonus}x bonus!)`
-                  : `Need ${formatNumber(prestigeInfo.cost)} XP`}
-              </button>
-            )}
-          </div>
+        {/* Prestige */}
+        <div className="bg-[#111827] rounded-xl p-6 border border-[#6366f1] mb-8 text-center">
+          <h2 className="text-xl font-bold mb-2">🌟 Prestige</h2>
+          <p className="text-[#94a3b8] text-sm mb-4">
+            Reset for permanent multiplier
+          </p>
+          {prestigeInfo && (
+            <button
+              onClick={prestige}
+              disabled={!prestigeInfo.canPrestige}
+              className={`px-6 py-2 rounded-lg font-medium ${
+                prestigeInfo.canPrestige
+                  ? 'bg-[#6366f1] text-white'
+                  : 'bg-[#1e293b] text-[#64748b]'
+              }`}
+            >
+              {prestigeInfo.canPrestige
+                ? `Prestige (+${prestigeInfo.bonus}x)`
+                : `Need ${formatNumber(prestigeInfo.cost)} XP`}
+            </button>
+          )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Actions */}
         <div className="flex gap-4 justify-center">
-          <button
-            onClick={save}
-            className="px-4 py-2 bg-[#1e293b] rounded-lg hover:bg-[#2dd4bf] hover:text-white transition-all"
-          >
+          <button onClick={save} className="px-4 py-2 bg-[#1e293b] rounded-lg">
             💾 Save
           </button>
-          <button
-            onClick={reset}
-            className="px-4 py-2 bg-[#1e293b] rounded-lg hover:bg-red-600 hover:text-white transition-all"
-            onClickCapture={() => confirm('Are you sure you want to reset?')}
+          <button 
+            onClick={() => { if (confirm('Reset?')) reset(); }} 
+            className="px-4 py-2 bg-[#1e293b] rounded-lg"
           >
             🗑️ Reset
           </button>
         </div>
 
-        {/* Footer */}
         <footer className="text-center mt-8 text-[#64748b] text-sm">
-          <p>💡 Tip: Generate Beats → Produce Tracks → Build Fans → Earn Cash!</p>
+          <p>💡 Beats → Tracks → Fans → Cash!</p>
         </footer>
       </div>
     </div>
