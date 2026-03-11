@@ -89,6 +89,16 @@ export function useGame() {
     setGameState(newState);
   }, []);
 
+  const clickToEarn = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      resources: {
+        ...prev.resources,
+        beats: prev.resources.beats + 1,
+      }
+    }));
+  }, []);
+
   return {
     state: gameState,
     isLoading: !loaded,
@@ -97,6 +107,7 @@ export function useGame() {
     prestige,
     save,
     reset,
+    clickToEarn,
     calculatePrestige: calculatePrestige(gameState),
     calculateUpgradeCost: (skillName: string, level: number) => calculateUpgradeCost(skillName, level),
     SKILLS,

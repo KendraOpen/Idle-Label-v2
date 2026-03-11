@@ -11,6 +11,7 @@ function formatNumber(num: number): string {
 
 export default function Home() {
   const {
+    clickToEarn,
     state,
     isLoading,
     upgrade,
@@ -61,6 +62,24 @@ export default function Home() {
           )}
         </header>
 
+        {/* Manual Click Button */}
+        <div className="mb-6 text-center">
+          <button 
+            onClick={() => clickToEarn()}
+            className="px-8 py-4 bg-gradient-to-r from-[#FF6B6B] to-orange-500 rounded-xl font-bold text-lg animate-pulse hover:scale-105 transition-transform"
+          >
+            🎵 Click to Make Beat (+1 Beat)
+          </button>
+        </div>
+        {/* CLICK TO EARN - Starter mechanic */}
+        <div className="mb-6 text-center">
+          <button 
+            onClick={clickToEarn}
+            className="px-8 py-4 bg-gradient-to-r from-[#FF6B6B] to-orange-500 rounded-xl font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-[#FF6B6B]/20"
+          >
+            🎵 Click to Make Beat (+1)
+          </button>
+        </div>
         {/* Resources - Force update every render */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           {[
