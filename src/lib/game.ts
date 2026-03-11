@@ -107,7 +107,7 @@ export const PRESTIGE_REQUIRED_XP = 1000;
 export function createDefaultState(): GameState {
   return {
     resources: {
-      cash: 0,
+      cash: 50, // Start with enough to buy first upgrade
       beats: 0,
       tracks: 0,
       fans: 0,
