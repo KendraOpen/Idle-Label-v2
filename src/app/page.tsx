@@ -1,6 +1,6 @@
 'use client';
 
-import { useGame } from '@/lib/useGame';
+import { useGame } from '@/lib/useGame'; import type { SkillName } from '@/lib/game';
 
 function fmt(n: number): string {
   if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
